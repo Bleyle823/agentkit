@@ -89,6 +89,11 @@ export interface LegacyCdpWalletProviderConfig extends LegacyCdpProviderConfig {
      */
     feePerGasMultiplier?: number;
   };
+
+  /**
+   * Optional RPC URL for Viem public client.
+   */
+  rpcUrl?: string;
 }
 
 /**
@@ -131,9 +136,10 @@ export class LegacyCdpWalletProvider extends EvmWalletProvider {
     this.#cdpWallet = config.wallet;
     this.#address = config.address;
     this.#network = config.network;
+    const rpcUrl = config.rpcUrl || process.env.RPC_URL;
     this.#publicClient = createPublicClient({
       chain: NETWORK_ID_TO_VIEM_CHAIN[config.network!.networkId!],
-      transport: http(),
+      transport: rpcUrl ? http(rpcUrl) : http(),
     });
     this.#gasLimitMultiplier = Math.max(config.gas?.gasLimitMultiplier ?? 1.2, 1);
     this.#feePerGasMultiplier = Math.max(config.gas?.feePerGasMultiplier ?? 1, 1);
@@ -197,6 +203,26 @@ export class LegacyCdpWalletProvider extends EvmWalletProvider {
     });
 
     return cdpWalletProvider;
+  }
+
+  /**
+   * Signs a raw hash.
+   *
+   * @param hash - The hash to sign.
+   * @returns The signed hash.
+   */
+  async sign(hash: `0x${string}`): Promise<`0x${string}`> {
+    if (!this.#cdpWallet) {
+      throw new Error("Wallet not initialized");
+    }
+
+    const payload = await this.#cdpWallet.createPayloadSignature(hash);
+
+    if (payload.getStatus() === "pending" && payload?.wait) {
+      await payload.wait(); // needed for Server-Signers
+    }
+
+    return payload.getSignature() as `0x${string}`;
   }
 
   /**
@@ -415,6 +441,15 @@ export class LegacyCdpWalletProvider extends EvmWalletProvider {
   }
 
   /**
+   * Gets the Viem PublicClient used for read-only operations.
+   *
+   * @returns The Viem PublicClient instance used for read-only operations.
+   */
+  getPublicClient(): PublicClient {
+    return this.#publicClient;
+  }
+
+  /**
    * Gets the balance of the wallet.
    *
    * @returns The balance of the wallet in wei
@@ -536,7 +571,7 @@ export class LegacyCdpWalletProvider extends EvmWalletProvider {
    * Transfer the native asset of the network.
    *
    * @param to - The destination address.
-   * @param value - The amount to transfer in Wei.
+   * @param value - The amount to transfer in atomic units (Wei).
    * @returns The transaction hash.
    */
   async nativeTransfer(to: `0x${string}`, value: string): Promise<`0x${string}`> {

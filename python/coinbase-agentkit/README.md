@@ -222,6 +222,36 @@ agent_kit = AgentKit(AgentKitConfig(
 This section provides a detailed list of all available action providers and their actions.
 
 <details>
+<summary><strong>Aave</strong></summary>
+<table width="100%">
+<tr>
+    <td width="200"><code>supply</code></td>
+    <td width="768">Supplies assets to Aave V3 protocol as collateral for borrowing or earning interest.</td>
+</tr>
+<tr>
+    <td width="200"><code>withdraw</code></td>
+    <td width="768">Withdraws assets from Aave V3 protocol.</td>
+</tr>
+<tr>
+    <td width="200"><code>borrow</code></td>
+    <td width="768">Borrows assets from Aave V3 protocol against supplied collateral.</td>
+</tr>
+<tr>
+    <td width="200"><code>repay</code></td>
+    <td width="768">Repays borrowed assets to Aave V3 protocol.</td>
+</tr>
+<tr>
+    <td width="200"><code>set_collateral</code></td>
+    <td width="768">Sets whether an asset is used as collateral in Aave V3 protocol.</td>
+</tr>
+<tr>
+    <td width="200"><code>get_portfolio</code></td>
+    <td width="768">Gets portfolio details from Aave V3 protocol including supplied assets, borrowed assets, and health factor.</td>
+</tr>
+</table>
+</details>
+
+<details>
 <summary><strong>Basename</strong></summary>
 <table width="100%">
 <tr>
@@ -237,6 +267,34 @@ This section provides a detailed list of all available action providers and thei
 <tr>
     <td width="200"><code>request_faucet_funds</code></td>
     <td width="768">Requests testnet ETH, USDC, EURC or CBBTC.</td>
+</tr>
+</table>
+</details>
+
+<details>
+<summary><strong>CDP EVM Wallet</strong></summary>
+<table width="100%">
+<tr>
+    <td width="200"><code>get_swap_price</code></td>
+    <td width="768">Fetches a price quote for swapping between two tokens using the CDP Swap API (does not execute swap).</td>
+</tr>
+<tr>
+    <td width="200"><code>swap</code></td>
+    <td width="768">Executes a token swap using the CDP Swap API with automatic token approvals.</td>
+</tr>
+</table>
+</details>
+
+<details>
+<summary><strong>CDP Smart Wallet</strong></summary>
+<table width="100%">
+<tr>
+    <td width="200"><code>get_swap_price</code></td>
+    <td width="768">Fetches a price quote for swapping between two tokens using the CDP Swap API (does not execute swap).</td>
+</tr>
+<tr>
+    <td width="200"><code>swap</code></td>
+    <td width="768">Executes a token swap using the CDP Swap API with automatic token approvals.</td>
 </tr>
 </table>
 </details>
@@ -277,6 +335,18 @@ This section provides a detailed list of all available action providers and thei
 <tr>
     <td width="200"><code>transfer</code></td>
     <td width="768">Transfers a specified amount of ERC-20 tokens to a destination address.</td>
+</tr>
+<tr>
+    <td width="200"><code>approve</code></td>
+    <td width="768">Approves a spender to transfer ERC-20 tokens from the wallet.</td>
+</tr>
+<tr>
+    <td width="200"><code>get_allowance</code></td>
+    <td width="768">Checks the allowance amount for a spender of an ERC-20 token.</td>
+</tr>
+<tr>
+    <td width="200"><code>get_erc20_token_address</code></td>
+    <td width="768">Gets the contract address for frequently used ERC-20 tokens on different networks by symbol.</td>
 </tr>
 </table>
 </details>
@@ -412,7 +482,7 @@ This section provides a detailed list of all available action providers and thei
 </tr>
 <tr>
     <td width="200"><code>fetch_price_feed_id</code></td>
-    <td width="768">Retrieves the unique price feed identifier for a given token symbol.</td>
+    <td width="768">Retrieves the unique price feed identifier for a given asset symbol.</td>
 </tr>
 </table>
 </details>
@@ -629,6 +699,7 @@ from coinbase_agentkit import (
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
     cdp_api_action_provider,
+    cdp_evm_wallet_action_provider,
     erc20_action_provider,
     pyth_action_provider,
     wallet_action_provider,
@@ -648,6 +719,7 @@ agentkit = AgentKit(AgentKitConfig(
     wallet_provider=wallet_provider,
     action_providers=[
         cdp_api_action_provider(),
+        cdp_evm_wallet_action_provider(),
         erc20_action_provider(),
         pyth_action_provider(),
         wallet_action_provider(),
@@ -731,7 +803,7 @@ You can enable gasless transactions by providing a paymaster URL:
 ```python
 from coinbase_agentkit import CdpSmartWalletProvider, CdpSmartWalletProviderConfig
 
-wallet_provider = CdpSmartWalletProvider(CdpSmartWalletProvideronfig(
+wallet_provider = CdpSmartWalletProvider(CdpSmartWalletProviderConfig(
     api_key_id="CDP API KEY ID",
     api_key_secret="CDP API KEY SECRET",
     wallet_secret="CDP WALLET SECRET",
@@ -751,6 +823,7 @@ from coinbase_agentkit import (
     CdpSmartWalletProvider,
     CdpSmartWalletProviderConfig,
     cdp_api_action_provider,
+    cdp_smart_wallet_action_provider,
     erc20_action_provider,
     pyth_action_provider,
     wallet_action_provider,
@@ -771,6 +844,7 @@ agentkit = AgentKit(AgentKitConfig(
     wallet_provider=wallet_provider,
     action_providers=[
         cdp_api_action_provider(),
+        cdp_smart_wallet_action_provider(),
         erc20_action_provider(),
         pyth_action_provider(),
         wallet_action_provider(),

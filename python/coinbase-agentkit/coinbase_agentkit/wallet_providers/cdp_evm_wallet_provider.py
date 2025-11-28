@@ -24,6 +24,7 @@ class CdpEvmWalletProviderConfig(BaseModel):
     network_id: str | None = Field(None, description="The network id")
     address: str | None = Field(None, description="The address to use")
     idempotency_key: str | None = Field(None, description="The idempotency key for wallet creation")
+    rpc_url: str | None = Field(None, description="Optional RPC URL to override default chain RPC")
 
 
 class CdpEvmWalletProvider(EvmWalletProvider):
@@ -54,7 +55,7 @@ class CdpEvmWalletProvider(EvmWalletProvider):
             self._idempotency_key = config.idempotency_key or os.getenv("IDEMPOTENCY_KEY") or None
 
             chain = NETWORK_ID_TO_CHAIN[network_id]
-            rpc_url = chain.rpc_urls["default"].http[0]
+            rpc_url = config.rpc_url or os.getenv("RPC_URL") or chain.rpc_urls["default"].http[0]
 
             self._network = Network(
                 protocol_family="evm",
@@ -146,7 +147,7 @@ class CdpEvmWalletProvider(EvmWalletProvider):
                         to=to,
                         value=value_wei,
                     ),
-                    network=self._network.network_id,
+                    network=self._get_cdp_sdk_network(),
                 )
 
         return self._run_async(_send_transaction())
@@ -199,7 +200,7 @@ class CdpEvmWalletProvider(EvmWalletProvider):
                         value=transaction.get("value", 0),
                         data=transaction.get("data", "0x"),
                     ),
-                    network=self._network.network_id,
+                    network=self._get_cdp_sdk_network(),
                 )
 
         return self._run_async(_send_transaction())
@@ -297,7 +298,7 @@ class CdpEvmWalletProvider(EvmWalletProvider):
                         value=transaction.get("value", 0),
                         data=transaction.get("data", "0x"),
                     ),
-                    network=self._network.network_id,
+                    network=self._get_cdp_sdk_network(),
                 )
 
         return self._run_async(_sign_transaction())
@@ -328,6 +329,31 @@ class CdpEvmWalletProvider(EvmWalletProvider):
         """
         async with client as cdp:
             return await cdp.evm.create_account(idempotency_key=self._idempotency_key)
+
+    def _get_cdp_sdk_network(self) -> str:
+        """Convert the internal network ID to the format expected by the CDP SDK.
+
+        Returns:
+            str: The network ID in CDP SDK format
+
+        Raises:
+            ValueError: If the network is not supported by CDP SDK
+
+        """
+        network_mapping = {
+            "base-sepolia": "base-sepolia",
+            "base-mainnet": "base",
+            "ethereum-mainnet": "ethereum",
+            "ethereum-sepolia": "ethereum-sepolia",
+            "polygon-mainnet": "polygon",
+            "arbitrum-mainnet": "arbitrum",
+            "optimism-mainnet": "optimism",
+        }
+
+        if self._network.network_id not in network_mapping:
+            raise ValueError(f"Unsupported network for CDP SDK: {self._network.network_id}")
+
+        return network_mapping[self._network.network_id]
 
     def _run_async(self, coroutine):
         """Run an async coroutine synchronously.

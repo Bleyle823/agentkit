@@ -2,6 +2,37 @@
 
 <!-- towncrier release notes start -->
 
+## [0.7.4] - 2025-10-03
+
+### Fixed
+
+- Made the cdp v2 faucet available to all wallet providers ([#854](https://github.com/coinbase/agentkit/pull/854))
+- Fixed units and removed min amount in WETH action ([#859](https://github.com/coinbase/agentkit/pull/859))
+- Fixed unit issues in balance/transfer actions and add approval actions ([#860](https://github.com/coinbase/agentkit/pull/860))
+
+
+## [0.7.3] - 2025-09-19
+
+### Fixed
+
+- Replace deprecated pydantic @validator and class config ([#579](https://github.com/coinbase/agentkit/pull/579))
+- Fixed pyth feed selection and added equity/fx/metal feeds ([#845](https://github.com/coinbase/agentkit/pull/845))
+
+
+## [0.7.2] - 2025-09-05
+
+### Added
+
+- Added optional custom rpc url ([#824](https://github.com/coinbase/agentkit/pull/824))
+
+### Fixed
+
+- Exposed erc721_action_provider in the public API to enable direct imports. ([#829](https://github.com/coinbase/agentkit/pull/829))
+- Fixed swap API action ([#836](https://github.com/coinbase/agentkit/pull/836))
+- Fixed ETH price feed in PythActionProvider
+- Fixed network support in CDP wallet providers
+
+
 ## [0.7.1] - 2025-08-01
 
 ### Added

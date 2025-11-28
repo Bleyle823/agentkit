@@ -9,6 +9,7 @@ from coinbase_agentkit import (
     CdpEvmWalletProvider,
     CdpEvmWalletProviderConfig,
     cdp_api_action_provider,
+    cdp_evm_wallet_action_provider,
     erc20_action_provider,
     pyth_action_provider,
     wallet_action_provider,
@@ -48,6 +49,7 @@ def initialize_agent(config: CdpEvmWalletProviderConfig):
             network_id=config.network_id,  # Network ID - Optional, will default to 'base-sepolia'
             address=config.address,  # Wallet Address - Optional, will trigger idempotency flow if not provided
             idempotency_key=config.idempotency_key,  # Idempotency Key - Optional, seeds generation of a new wallet
+            rpc_url=config.rpc_url,  # Optional RPC URL override
         )
     )
 
@@ -57,6 +59,7 @@ def initialize_agent(config: CdpEvmWalletProviderConfig):
             wallet_provider=wallet_provider,
             action_providers=[
                 cdp_api_action_provider(),
+                cdp_evm_wallet_action_provider(),
                 erc20_action_provider(),
                 pyth_action_provider(),
                 wallet_action_provider(),
@@ -134,6 +137,7 @@ def setup():
         address=wallet_address,
         # Only include idempotency_key if we need to create a new wallet
         idempotency_key=(os.getenv("IDEMPOTENCY_KEY") if not wallet_address else None),
+        rpc_url=os.getenv("RPC_URL"),
     )
 
     # Initialize the agent and get the wallet provider

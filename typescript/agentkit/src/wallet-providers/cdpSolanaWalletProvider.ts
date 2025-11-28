@@ -1,9 +1,9 @@
 import { CdpClient } from "@coinbase/cdp-sdk";
+import type { KeyPairSigner } from "@solana/kit";
 import {
   clusterApiUrl,
   ComputeBudgetProgram,
   Connection,
-  LAMPORTS_PER_SOL,
   MessageV0,
   PublicKey,
   RpcResponseAndContext,
@@ -13,6 +13,7 @@ import {
   SystemProgram,
   VersionedTransaction,
 } from "@solana/web3.js";
+import bs58 from "bs58";
 import { Network } from "../network";
 import {
   SOLANA_DEVNET_NETWORK,
@@ -23,7 +24,7 @@ import {
   SOLANA_TESTNET_NETWORK_ID,
 } from "../network/svm";
 import { WalletProviderWithClient, CdpWalletProviderConfig } from "./cdpShared";
-import { SvmWalletProvider } from "./svmWalletProvider";
+import { SvmWalletProvider, createSignerFromBytes } from "./svmWalletProvider";
 
 interface ConfigureCdpSolanaWalletProviderWithWalletOptions {
   /**
@@ -52,9 +53,9 @@ interface ConfigureCdpSolanaWalletProviderWithWalletOptions {
  */
 export class CdpSolanaWalletProvider extends SvmWalletProvider implements WalletProviderWithClient {
   #connection: Connection;
-  #serverAccount: Awaited<ReturnType<typeof CdpClient.prototype.solana.createAccount>>;
   #cdp: CdpClient;
   #network: Network;
+  #serverAccount: Awaited<ReturnType<typeof CdpClient.prototype.solana.createAccount>>;
 
   /**
    * Constructs a new CdpSolanaWalletProvider.
@@ -199,16 +200,18 @@ export class CdpSolanaWalletProvider extends SvmWalletProvider implements Wallet
     const serializedTransaction = transaction.serialize();
     const encodedSerializedTransaction = Buffer.from(serializedTransaction).toString("base64");
 
-    const signedTransaction = await this.#cdp.solana.signTransaction({
+    const signedTransactionResponse = await this.#cdp.solana.signTransaction({
       transaction: encodedSerializedTransaction,
       address: this.#serverAccount.address,
     });
-    transaction.addSignature(
-      this.getPublicKey(),
-      Buffer.from(signedTransaction.signature, "base64"),
-    );
 
-    return transaction;
+    const signedTransactionBytes = Buffer.from(
+      signedTransactionResponse.signedTransaction,
+      "base64",
+    );
+    const signedTransaction = VersionedTransaction.deserialize(signedTransactionBytes);
+
+    return signedTransaction;
   }
 
   /**
@@ -282,23 +285,42 @@ export class CdpSolanaWalletProvider extends SvmWalletProvider implements Wallet
   }
 
   /**
+   * Sign a message.
+   *
+   * @param message - The message to sign as a Uint8Array
+   * @returns The signature as a Uint8Array
+   */
+  async signMessage(message: Uint8Array): Promise<Uint8Array> {
+    // Convert Uint8Array to string for CDP SDK
+    const messageString = Buffer.from(message).toString("utf8");
+
+    const { signature } = await this.#cdp.solana.signMessage({
+      address: this.#serverAccount.address,
+      message: messageString,
+    });
+
+    // Convert signature string back to Uint8Array
+    // CDP returns signature as a hex string, convert to bytes
+    return new Uint8Array(Buffer.from(signature, "hex"));
+  }
+
+  /**
    * Transfer SOL from the wallet to another address
    *
    * @param to - The base58 encoded address to transfer the SOL to
-   * @param value - The amount of SOL to transfer (as a decimal string, e.g. "0.0001")
+   * @param value - The amount to transfer in atomic units (Lamports)
    * @returns The signature
    */
   async nativeTransfer(to: string, value: string): Promise<string> {
     const initialBalance = await this.getBalance();
-    const solAmount = parseFloat(value);
-    const lamports = BigInt(Math.floor(solAmount * LAMPORTS_PER_SOL));
+    const lamports = BigInt(value);
 
     // Check if we have enough balance (including estimated fees)
     if (initialBalance < lamports + BigInt(5000)) {
       throw new Error(
-        `Insufficient balance. Have ${Number(initialBalance) / LAMPORTS_PER_SOL} SOL, need ${
-          solAmount + 0.000005
-        } SOL (including fees)`,
+        `Insufficient balance. Have ${Number(initialBalance)} lamports, need ${
+          Number(lamports) + 5000
+        } lamports (including fees)`,
       );
     }
 
@@ -329,5 +351,23 @@ export class CdpSolanaWalletProvider extends SvmWalletProvider implements Wallet
     await this.waitForSignatureResult(signature);
 
     return signature;
+  }
+
+  /**
+   * Get the keypair signer for this wallet.
+   *
+   * @returns The KeyPairSigner
+   */
+  async getKeyPairSigner(): Promise<KeyPairSigner> {
+    // Export the private key from CDP
+    const exportedPrivateKey = await this.#cdp.solana.exportAccount({
+      address: this.#serverAccount.address,
+    });
+
+    // Decode the base58 encoded private key to get the full 64-byte key
+    const fullKeyBytes = bs58.decode(exportedPrivateKey);
+
+    // Create and return the KeyPairSigner using the full key bytes
+    return createSignerFromBytes(fullKeyBytes);
   }
 }

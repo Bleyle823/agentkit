@@ -1,5 +1,6 @@
 """Action providers for AgentKit."""
 
+from .aave.aave_action_provider import AaveActionProvider, aave_action_provider
 from .action_decorator import create_action
 from .action_provider import Action, ActionProvider
 from .basename.basename_action_provider import (
@@ -7,8 +8,17 @@ from .basename.basename_action_provider import (
     basename_action_provider,
 )
 from .cdp.cdp_api_action_provider import CdpApiActionProvider, cdp_api_action_provider
+from .cdp.cdp_evm_wallet_action_provider import (
+    CdpEvmWalletActionProvider,
+    cdp_evm_wallet_action_provider,
+)
+from .cdp.cdp_smart_wallet_action_provider import (
+    CdpSmartWalletActionProvider,
+    cdp_smart_wallet_action_provider,
+)
 from .compound.compound_action_provider import CompoundActionProvider, compound_action_provider
 from .erc20.erc20_action_provider import ERC20ActionProvider, erc20_action_provider
+from .erc721.erc721_action_provider import Erc721ActionProvider, erc721_action_provider
 from .hyperboliclabs.hyperbolic_action_provider import (
     HyperbolicActionProvider,
     hyperbolic_action_provider,
@@ -32,14 +42,22 @@ __all__ = [
     "Action",
     "ActionProvider",
     "create_action",
+    "AaveActionProvider",
+    "aave_action_provider",
     "BasenameActionProvider",
     "basename_action_provider",
     "CdpApiActionProvider",
     "cdp_api_action_provider",
+    "CdpEvmWalletActionProvider",
+    "cdp_evm_wallet_action_provider",
+    "CdpSmartWalletActionProvider",
+    "cdp_smart_wallet_action_provider",
     "CompoundActionProvider",
     "compound_action_provider",
     "ERC20ActionProvider",
     "erc20_action_provider",
+    "Erc721ActionProvider",
+    "erc721_action_provider",
     "HyperbolicActionProvider",
     "hyperbolic_action_provider",
     "MorphoActionProvider",
