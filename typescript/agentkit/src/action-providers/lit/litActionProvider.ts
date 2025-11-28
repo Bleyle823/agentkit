@@ -76,7 +76,7 @@ export class LitActionProvider extends ActionProvider<EvmWalletProvider> {
       expiration: new Date(Date.now() + 1000 * 60 * 10).toISOString(), // 10 mins
       resourceAbilityRequests: [
         {
-          resource: new LitActionResource("*"),
+          resource: new LitActionResource("*") as any,
           ability: LIT_ABILITY.LitActionExecution,
         },
       ],
@@ -84,7 +84,7 @@ export class LitActionProvider extends ActionProvider<EvmWalletProvider> {
         const toSign = await createSiweMessage({
           uri,
           expiration,
-          resources: resourceAbilityRequests,
+          resources: resourceAbilityRequests as any,
           walletAddress,
           nonce: await client.getLatestBlockhash(),
           litNodeClient: client,
